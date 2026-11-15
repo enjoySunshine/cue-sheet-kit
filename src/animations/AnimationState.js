@@ -1205,6 +1205,151 @@ var AnimationState = new Class({
     },
 
     /**
+     * Returns the AnimationFrame that would be displayed at the given time of this animation's
+     * playback, without changing the current state of playback.
+     *
+     * Time is measured in milliseconds from the moment playback began, and uses the playback
+     * values currently loaded into this component, such as `delay`, `repeat`, `repeatDelay`,
+     * `yoyo` and `frameRate`. This makes it suitable for previewing a playhead position, or
+     * for finding out which frame is due at a specific moment.
+     *
+     * The result is calculated by walking the animation timeline, so it matches what an
+     * `update` loop fed one millisecond at a time would have shown. This differs from
+     * `getProgress`, which reports the progress of whichever frame happens to be current.
+     *
+     * If playback has not started yet, because of the delay, `null` is returned unless
+     * `showBeforeDelay` is set. If the animation has completed, the frame it came to rest
+     * on is returned for any later time.
+     *
+     * @method Phaser.Animations.AnimationState#getFrameAtTime
+     * @since 4.3.0
+     *
+     * @param {number} time - The time, in milliseconds, to get the frame for.
+     * @param {Phaser.Types.Animations.FrameAtTimeConfig} [config] - Optional playback values to use in place of the current ones.
+     *
+     * @return {?Phaser.Animations.AnimationFrame} The frame displayed at the given time, or `null` if playback has not started.
+     */
+    getFrameAtTime: function (time, config)
+    {
+        var anim = this.currentAnim;
+
+        if (!anim)
+        {
+            return null;
+        }
+
+        if (config === undefined)
+        {
+            config = {};
+        }
+
+        var values = {
+            delay: (config.delay !== undefined) ? config.delay : this.delay,
+            repeat: (config.repeat !== undefined) ? config.repeat : this.repeat,
+            repeatDelay: (config.repeatDelay !== undefined) ? config.repeatDelay : this.repeatDelay,
+            yoyo: (config.yoyo !== undefined) ? config.yoyo : this.yoyo,
+            frameRate: (config.frameRate !== undefined) ? config.frameRate : this.frameRate,
+            msPerFrame: (config.msPerFrame !== undefined) ? config.msPerFrame : this.msPerFrame,
+            showBeforeDelay: (config.showBeforeDelay !== undefined) ? config.showBeforeDelay : this.showBeforeDelay,
+            startFrame: (config.startFrame !== undefined) ? config.startFrame : 0
+        };
+
+        return anim.getFrameAtTime(time, values);
+    },
+
+    /**
+     * Returns the AnimationFrame that would be displayed at the given time of this
+     * animation's playback, without changing the current state of playback.
+     *
+     * This is an alias of `getFrameAtTime`, named to sit alongside `getProgress`:
+     * one reads by normalized progress, the other by milliseconds of playback.
+     *
+     * @method Phaser.Animations.AnimationState#getFrameByTime
+     * @since 4.3.0
+     *
+     * @param {number} time - The time, in milliseconds, to get the frame for.
+     * @param {Phaser.Types.Animations.FrameAtTimeConfig} [config] - Optional playback values to use in place of the current ones.
+     *
+     * @return {?Phaser.Animations.AnimationFrame} The frame displayed at the given time, or `null` if playback has not started.
+     */
+    getFrameByTime: function (time, config)
+    {
+        return this.getFrameAtTime(time, config);
+    },
+
+    /**
+     * Moves this animation's playback to the given time, setting the matching frame and
+     * continuing from there as though it had played up to that point one tick at a time.
+     *
+     * Time is measured in milliseconds from the moment playback began. Using this is
+     * different from `setProgress`, which jumps to a frame based on its position in the
+     * sequence. `setTime` follows the real playback timeline instead, so it accounts for
+     * `delay`, per-frame durations, `yoyo`, `repeat` and `repeatDelay`.
+     *
+     * Playback is not stopped by this call, but any pending repeat delay is applied so
+     * that the animation carries on correctly. Time must be zero or greater; a negative
+     * value is clamped to zero.
+     *
+     * @method Phaser.Animations.AnimationState#setTime
+     * @since 4.3.0
+     *
+     * @param {number} [time=0] - The time, in milliseconds, to move playback to.
+     *
+     * @return {Phaser.GameObjects.GameObject} The Game Object that owns this Animation Component.
+     */
+    setTime: function (time)
+    {
+        var anim = this.currentAnim;
+
+        if (!anim)
+        {
+            return this.parent;
+        }
+
+        if (time === undefined)
+        {
+            time = 0;
+        }
+
+        if (!(time > 0))
+        {
+            time = 0;
+        }
+
+        var values = {
+            delay: this.delay,
+            repeat: this.repeat,
+            repeatDelay: this.repeatDelay,
+            yoyo: this.yoyo,
+            frameRate: this.frameRate,
+            msPerFrame: this.msPerFrame,
+            showBeforeDelay: this.showBeforeDelay
+        };
+
+        var state = anim.simulatePlayback(time, values);
+
+        if (state)
+        {
+            //  During the opening delay there is no frame to show, so whatever is
+            //  currently on screen is left alone until playback begins.
+            if (state.currentFrame)
+            {
+                this.currentFrame = state.currentFrame;
+                this.setCurrentFrame(state.currentFrame);
+            }
+
+            this.accumulator = state.accumulator;
+            this.nextTick = state.nextTick;
+            this.forward = state.forward;
+            this.pendingRepeat = state.pendingRepeat;
+            this.repeatCounter = state.repeatCounter;
+            this.hasStarted = state.hasStarted;
+        }
+
+        return this.parent;
+    },
+
+    /**
      * Sets the number of times that the animation should repeat after its first play through.
      * For example, if repeat is 1, the animation will play a total of twice: the initial play plus 1 repeat.
      *

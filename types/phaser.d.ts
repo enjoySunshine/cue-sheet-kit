@@ -1170,6 +1170,30 @@ declare namespace Phaser {
             getFrameByProgress(value: number): Phaser.Animations.AnimationFrame;
 
             /**
+             * Returns the AnimationFrame that would be displayed at the given time during playback.
+             * @param time The time, in milliseconds, to get the frame for.
+             * @param config Optional playback values to use in place of the Animation's own.
+             * @returns The frame displayed at the given time, or `null` if playback has not started.
+             */
+            getFrameAtTime(time: number, config?: Phaser.Types.Animations.FrameAtTimeConfig): Phaser.Animations.AnimationFrame | null;
+
+            /**
+             * Returns the AnimationFrame that would be displayed at the given time during playback.
+             * @param time The time, in milliseconds, to get the frame for.
+             * @param config Optional playback values to use in place of the Animation's own.
+             * @returns The frame displayed at the given time, or `null` if playback has not started.
+             */
+            getFrameByTime(time: number, config?: Phaser.Types.Animations.FrameAtTimeConfig): Phaser.Animations.AnimationFrame | null;
+
+            /**
+             * Simulates playback of this Animation up to the given time and returns the resulting playback state.
+             * @param time The time, in milliseconds, to simulate up to.
+             * @param config Optional playback values to use in place of the Animation's own.
+             * @returns The simulated playback state, or `null` if the time is invalid or the Animation has no frames.
+             */
+            protected simulatePlayback(time: number, config?: Phaser.Types.Animations.FrameAtTimeConfig): Phaser.Animations.AnimationState | null;
+
+            /**
              * Advance the animation frame.
              * @param state The Animation State to advance.
              */
@@ -2257,6 +2281,29 @@ declare namespace Phaser {
              * @returns The Game Object that owns this Animation Component.
              */
             setProgress(value?: number): Phaser.GameObjects.GameObject;
+
+            /**
+             * Returns the AnimationFrame that would be displayed at the given time of this animation's playback, without changing the current state of playback.
+             * @param time The time, in milliseconds, to get the frame for.
+             * @param config Optional playback values to use in place of the current ones.
+             * @returns The frame displayed at the given time, or `null` if playback has not started.
+             */
+            getFrameAtTime(time: number, config?: Phaser.Types.Animations.FrameAtTimeConfig): Phaser.Animations.AnimationFrame | null;
+
+            /**
+             * Returns the AnimationFrame that would be displayed at the given time of this animation's playback, without changing the current state of playback.
+             * @param time The time, in milliseconds, to get the frame for.
+             * @param config Optional playback values to use in place of the current ones.
+             * @returns The frame displayed at the given time, or `null` if playback has not started.
+             */
+            getFrameByTime(time: number, config?: Phaser.Types.Animations.FrameAtTimeConfig): Phaser.Animations.AnimationFrame | null;
+
+            /**
+             * Moves this animation's playback to the given time, setting the matching frame and continuing from there.
+             * @param time The time, in milliseconds, to move playback to. Default 0.
+             * @returns The Game Object that owns this Animation Component.
+             */
+            setTime(time?: number): Phaser.GameObjects.GameObject;
 
             /**
              * Sets the number of times that the animation should repeat after its first play through.
@@ -95351,6 +95398,41 @@ declare namespace Phaser {
                  * Start playback of this animation from a randomly selected frame?
                  */
                 randomFrame?: boolean;
+            };
+
+            type FrameAtTimeConfig = {
+                /**
+                 * The frame rate of playback in frames per second, overriding the Animation's own.
+                 */
+                frameRate?: number;
+                /**
+                 * The number of milliseconds per frame, overriding the value derived from the frame rate.
+                 */
+                msPerFrame?: number;
+                /**
+                 * Delay before starting playback. Value given in milliseconds.
+                 */
+                delay?: number;
+                /**
+                 * Number of times to repeat the animation (-1 for infinity)
+                 */
+                repeat?: number;
+                /**
+                 * Delay before the animation repeats. Value given in milliseconds.
+                 */
+                repeatDelay?: number;
+                /**
+                 * Should the animation yoyo? (reverse back down to the start) before repeating?
+                 */
+                yoyo?: boolean;
+                /**
+                 * If this animation has a delay, should it show the first frame immediately (true), or only after the delay (false)
+                 */
+                showBeforeDelay?: boolean;
+                /**
+                 * The frame of the animation to start playback from.
+                 */
+                startFrame?: number;
             };
 
         }

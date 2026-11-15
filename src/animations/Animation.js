@@ -9,6 +9,8 @@ var Class = require('../utils/Class');
 var Events = require('./events');
 var FindClosestInSorted = require('../utils/array/FindClosestInSorted');
 var Frame = require('./AnimationFrame');
+var GetFrameAtTime = require('./GetFrameAtTime');
+var SimulatePlayback = require('./SimulatePlayback');
 var GetValue = require('../utils/object/GetValue');
 var SortByDigits = require('../utils/array/SortByDigits');
 
@@ -533,6 +535,86 @@ var Animation = new Class({
         value = Clamp(value, 0, 1);
 
         return FindClosestInSorted(value, this.frames, 'progress');
+    },
+
+    /**
+     * Returns the AnimationFrame that would be displayed at the given time during playback.
+     *
+     * Time is measured in milliseconds from the moment playback begins, and honours the
+     * Animation's `delay`, `repeat`, `repeatDelay` and `yoyo` settings, along with the
+     * per-frame durations. Unlike `getFrameByProgress`, this does not take a normalized
+     * value, and the two give different answers: progress is based on frame order alone,
+     * whereas time follows the real playback timeline.
+     *
+     * This is a pure calculation. It does not read or modify the playback state of any
+     * Game Object, which makes it suitable for previewing, scrubbing a playhead, or
+     * working out which frame is showing at a specific moment.
+     *
+     * If the Animation has not started yet, because of its `delay`, `null` is returned,
+     * unless the `showBeforeDelay` config flag is set, in which case the first frame is
+     * returned. Once playback has completed, the frame it came to rest on is returned for
+     * any later time.
+     *
+     * You can override any of the Animation's playback values, such as `frameRate`, `delay`
+     * or `repeat`, by passing them in the `config` object.
+     *
+     * @method Phaser.Animations.Animation#getFrameAtTime
+     * @since 4.3.0
+     *
+     * @param {number} time - The time, in milliseconds, to get the frame for.
+     * @param {Phaser.Types.Animations.FrameAtTimeConfig} [config] - Optional playback values to use in place of the Animation's own.
+     *
+     * @return {?Phaser.Animations.AnimationFrame} The frame displayed at the given time, or `null` if playback has not started.
+     */
+    getFrameAtTime: function (time, config)
+    {
+        return GetFrameAtTime(this, time, config);
+    },
+
+    /**
+     * Returns the AnimationFrame that would be displayed at the given time during playback.
+     *
+     * This is an alias of `getFrameAtTime`, named to sit alongside `getFrameByProgress`:
+     * one reads by normalized progress, the other by milliseconds of playback.
+     *
+     * @method Phaser.Animations.Animation#getFrameByTime
+     * @since 4.3.0
+     *
+     * @param {number} time - The time, in milliseconds, to get the frame for.
+     * @param {Phaser.Types.Animations.FrameAtTimeConfig} [config] - Optional playback values to use in place of the Animation's own.
+     *
+     * @return {?Phaser.Animations.AnimationFrame} The frame displayed at the given time, or `null` if playback has not started.
+     */
+    getFrameByTime: function (time, config)
+    {
+        return GetFrameAtTime(this, time, config);
+    },
+
+    /**
+     * Simulates playback of this Animation up to the given time and returns the resulting
+     * playback state.
+     *
+     * The returned object has the same shape as an `AnimationState`, with the `currentFrame`,
+     * `forward`, `pendingRepeat`, `accumulator`, `nextTick` and `repeatCounter` properties
+     * all set to what they would be had the animation been played up to `time` one tick at
+     * a time.
+     *
+     * This is a pure calculation that never touches the Game Object playing the animation.
+     * If you want to move real playback to a point in time, use `AnimationState.setTime`
+     * instead.
+     *
+     * @method Phaser.Animations.Animation#simulatePlayback
+     * @since 4.3.0
+     * @private
+     *
+     * @param {number} time - The time, in milliseconds, to simulate up to.
+     * @param {Phaser.Types.Animations.FrameAtTimeConfig} [config] - Optional playback values to use in place of the Animation's own.
+     *
+     * @return {?Phaser.Animations.AnimationState} The simulated playback state, or `null` if the time is invalid or the Animation has no frames.
+     */
+    simulatePlayback: function (time, config)
+    {
+        return SimulatePlayback(this, time, config);
     },
 
     /**
